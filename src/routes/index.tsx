@@ -244,8 +244,12 @@ function BookCard({ book }: { book: Book }) {
   return (
     <Card className="group flex flex-col gap-3 overflow-hidden border-border/70 p-4 transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)]">
       <div className="flex items-start gap-3">
-        <div className="grid h-20 w-14 shrink-0 place-items-center rounded-md bg-[image:var(--gradient-deep)] text-primary-foreground shadow-sm">
-          <BookOpen className="h-5 w-5 opacity-80" />
+        <div className="grid h-20 w-14 shrink-0 place-items-center overflow-hidden rounded-md bg-[image:var(--gradient-deep)] text-primary-foreground shadow-sm">
+          {book.cover_url ? (
+            <img src={book.cover_url} alt={book.title} className="h-full w-full object-cover" loading="lazy" />
+          ) : (
+            <BookOpen className="h-5 w-5 opacity-80" />
+          )}
         </div>
         <div className="min-w-0 flex-1">
           <Badge variant="secondary" className="mb-1 text-[10px] uppercase tracking-wider">
