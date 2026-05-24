@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { getInvoice } from "@/lib/invoice.functions";
 import { formatIDR, formatDateTime } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -15,19 +16,13 @@ export const Route = createFileRoute("/invoice/$id")({
 
 function InvoicePage() {
   const { id } = Route.useParams();
+  const fetchInvoice = useServerFn(getInvoice);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["invoice", id],
-    queryFn: async () => {
-      const [{ data: inv, error: e1 }, { data: items, error: e2 }] = await Promise.all([
-        supabase.from("invoices").select("*").eq("id", id).single(),
-        supabase.from("invoice_items").select("*").eq("invoice_id", id),
-      ]);
-      if (e1) throw e1;
-      if (e2) throw e2;
-      return { invoice: inv, items: items ?? [] };
-    },
+    queryFn: () => fetchInvoice({ data: { id } }),
   });
+
 
   if (isLoading) return <div className="p-10 text-center text-muted-foreground">Memuat…</div>;
   if (error || !data) return <div className="p-10 text-center text-destructive">Invoice tidak ditemukan.</div>;
