@@ -14,7 +14,150 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      books: {
+        Row: {
+          author: string
+          category: string | null
+          cover_url: string | null
+          created_at: string
+          description: string | null
+          id: string
+          price: number
+          stock: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author: string
+          category?: string | null
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          price?: number
+          stock?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author?: string
+          category?: string | null
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          price?: number
+          stock?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      invoice_items: {
+        Row: {
+          author: string | null
+          book_id: string | null
+          created_at: string
+          id: string
+          invoice_id: string
+          price: number
+          quantity: number
+          subtotal: number
+          title: string
+        }
+        Insert: {
+          author?: string | null
+          book_id?: string | null
+          created_at?: string
+          id?: string
+          invoice_id: string
+          price: number
+          quantity: number
+          subtotal: number
+          title: string
+        }
+        Update: {
+          author?: string | null
+          book_id?: string | null
+          created_at?: string
+          id?: string
+          invoice_id?: string
+          price?: number
+          quantity?: number
+          subtotal?: number
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_items_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          change_amount: number
+          created_at: string
+          customer_address: string | null
+          customer_email: string | null
+          customer_name: string
+          customer_phone: string | null
+          id: string
+          invoice_number: string
+          notes: string | null
+          paid_amount: number
+          payment_method: string
+          status: string
+          subtotal: number
+          tax: number
+          total: number
+        }
+        Insert: {
+          change_amount?: number
+          created_at?: string
+          customer_address?: string | null
+          customer_email?: string | null
+          customer_name: string
+          customer_phone?: string | null
+          id?: string
+          invoice_number?: string
+          notes?: string | null
+          paid_amount?: number
+          payment_method?: string
+          status?: string
+          subtotal?: number
+          tax?: number
+          total?: number
+        }
+        Update: {
+          change_amount?: number
+          created_at?: string
+          customer_address?: string | null
+          customer_email?: string | null
+          customer_name?: string
+          customer_phone?: string | null
+          id?: string
+          invoice_number?: string
+          notes?: string | null
+          paid_amount?: number
+          payment_method?: string
+          status?: string
+          subtotal?: number
+          tax?: number
+          total?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
