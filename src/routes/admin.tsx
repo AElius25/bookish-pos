@@ -292,6 +292,7 @@ type BookRow = {
   price: number;
   stock: number;
   description: string | null;
+  cover_url: string | null;
 };
 
 function BooksManager() {
