@@ -410,9 +410,7 @@ function CheckoutDialog({
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="cash"><Banknote className="mr-2 inline h-4 w-4" /> Tunai</SelectItem>
-                  <SelectItem value="card"><CreditCard className="mr-2 inline h-4 w-4" /> Kartu Debit/Kredit</SelectItem>
-                  <SelectItem value="qris"><Smartphone className="mr-2 inline h-4 w-4" /> QRIS / E-Wallet</SelectItem>
-                  <SelectItem value="transfer">Transfer Bank</SelectItem>
+                  <SelectItem value="qris"><Smartphone className="mr-2 inline h-4 w-4" /> QRIS</SelectItem>
                 </SelectContent>
               </Select>
             </div>
