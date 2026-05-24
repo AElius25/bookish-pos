@@ -292,6 +292,7 @@ type BookRow = {
   price: number;
   stock: number;
   description: string | null;
+  cover_url: string | null;
 };
 
 function BooksManager() {
@@ -404,7 +405,9 @@ function BookFormDialog({ editing, onClose }: { editing: BookRow | null; onClose
     price: editing ? String(editing.price) : "",
     stock: editing ? String(editing.stock) : "",
     description: editing?.description ?? "",
+    cover_url: editing?.cover_url ?? "",
   });
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     setForm({
@@ -414,8 +417,37 @@ function BookFormDialog({ editing, onClose }: { editing: BookRow | null; onClose
       price: editing ? String(editing.price) : "",
       stock: editing ? String(editing.stock) : "",
       description: editing?.description ?? "",
+      cover_url: editing?.cover_url ?? "",
     });
   }, [editing]);
+
+  const handleUpload = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("File harus berupa gambar");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Ukuran gambar maksimal 5MB");
+      return;
+    }
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() ?? "jpg";
+      const path = `${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from("book-covers").upload(path, file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+      if (error) throw error;
+      const { data } = supabase.storage.from("book-covers").getPublicUrl(path);
+      setForm((f) => ({ ...f, cover_url: data.publicUrl }));
+      toast.success("Gambar diunggah");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const saveMut = useMutation({
     mutationFn: async () => {
@@ -427,6 +459,7 @@ function BookFormDialog({ editing, onClose }: { editing: BookRow | null; onClose
         price: Number(form.price) || 0,
         stock: Number(form.stock) || 0,
         description: form.description.trim() || null,
+        cover_url: form.cover_url.trim() || null,
       };
       if (editing) {
         const { error } = await supabase.from("books").update(payload).eq("id", editing.id);
@@ -445,13 +478,48 @@ function BookFormDialog({ editing, onClose }: { editing: BookRow | null; onClose
   });
 
   return (
-    <DialogContent className="max-w-lg">
+    <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle className="font-display text-2xl">
           {editing ? "Edit Buku" : "Tambah Buku Baru"}
         </DialogTitle>
       </DialogHeader>
       <div className="grid gap-3">
+        <Field label="Gambar Sampul">
+          <div className="flex items-start gap-3">
+            <div className="h-28 w-20 shrink-0 overflow-hidden rounded border bg-secondary">
+              {form.cover_url ? (
+                <img src={form.cover_url} alt="Sampul" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
+                  Tidak ada
+                </div>
+              )}
+            </div>
+            <div className="flex-1 space-y-2">
+              <Input
+                type="file"
+                accept="image/*"
+                disabled={uploading}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleUpload(f);
+                  e.target.value = "";
+                }}
+              />
+              {uploading && <p className="text-xs text-muted-foreground">Mengunggah…</p>}
+              {form.cover_url && (
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, cover_url: "" })}
+                  className="text-xs text-destructive hover:underline"
+                >
+                  Hapus gambar
+                </button>
+              )}
+            </div>
+          </div>
+        </Field>
         <Field label="Judul *"><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></Field>
         <Field label="Penulis *"><Input value={form.author} onChange={(e) => setForm({ ...form, author: e.target.value })} /></Field>
         <Field label="Kategori"><Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} /></Field>
@@ -463,7 +531,7 @@ function BookFormDialog({ editing, onClose }: { editing: BookRow | null; onClose
       </div>
       <DialogFooter>
         <Button variant="outline" onClick={onClose}>Batal</Button>
-        <Button onClick={() => saveMut.mutate()} disabled={saveMut.isPending} className="bg-accent text-accent-foreground hover:bg-teal/90">
+        <Button onClick={() => saveMut.mutate()} disabled={saveMut.isPending || uploading} className="bg-accent text-accent-foreground hover:bg-teal/90">
           {saveMut.isPending ? "Menyimpan…" : "Simpan"}
         </Button>
       </DialogFooter>
