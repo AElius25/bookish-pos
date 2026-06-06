@@ -63,7 +63,6 @@ function AdminPage() {
 /* ────────────────────────────  LOGIN  ──────────────────────────── */
 
 function LoginScreen() {
-  const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -72,20 +71,9 @@ function LoginScreen() {
     e.preventDefault();
     setLoading(true);
     try {
-      if (mode === "login") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        toast.success("Selamat datang kembali!");
-      } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: window.location.origin + "/admin" },
-        });
-        if (error) throw error;
-        toast.success("Akun admin dibuat. Silakan masuk.");
-        setMode("login");
-      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      toast.success("Selamat datang kembali!");
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
@@ -99,9 +87,7 @@ function LoginScreen() {
         <div className="bg-[image:var(--gradient-deep)] p-6 text-primary-foreground">
           <ShieldCheck className="mb-2 h-7 w-7" />
           <h1 className="font-display text-3xl font-semibold">Admin Panel</h1>
-          <p className="text-sm text-primary-foreground/75">
-            {mode === "login" ? "Masuk untuk mengelola toko." : "Buat akun admin pertama."}
-          </p>
+          <p className="text-sm text-primary-foreground/75">Masuk untuk mengelola toko.</p>
         </div>
         <form onSubmit={submit} className="space-y-4 p-6">
           <div className="space-y-1.5">
@@ -113,15 +99,8 @@ function LoginScreen() {
             <Input id="password" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>
           <Button type="submit" disabled={loading} className="h-11 w-full bg-accent text-accent-foreground hover:bg-teal/90">
-            {loading ? "Memproses…" : mode === "login" ? "Masuk" : "Daftar"}
+            {loading ? "Memproses…" : "Masuk"}
           </Button>
-          <button
-            type="button"
-            onClick={() => setMode(mode === "login" ? "signup" : "login")}
-            className="block w-full text-center text-sm text-muted-foreground hover:text-foreground"
-          >
-            {mode === "login" ? "Belum punya akun admin? Daftar" : "Sudah punya akun? Masuk"}
-          </button>
         </form>
       </Card>
     </div>
