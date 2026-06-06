@@ -1,11 +1,36 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import { getInvoice } from "@/lib/invoice.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { formatIDR, formatDateTime } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Printer, ArrowLeft, BookOpen, CheckCircle2 } from "lucide-react";
+
+type InvoiceRow = {
+  id: string;
+  invoice_number: string;
+  customer_name: string;
+  customer_email: string | null;
+  customer_phone: string | null;
+  customer_address: string | null;
+  payment_method: string;
+  subtotal: number | string;
+  tax: number | string;
+  total: number | string;
+  paid_amount: number | string;
+  change_amount: number | string;
+  status: string;
+  notes: string | null;
+  created_at: string;
+};
+type ItemRow = {
+  id: string;
+  title: string;
+  author: string | null;
+  price: number | string;
+  quantity: number;
+  subtotal: number | string;
+};
 
 export const Route = createFileRoute("/invoice/$id")({
   head: () => ({
@@ -16,13 +41,17 @@ export const Route = createFileRoute("/invoice/$id")({
 
 function InvoicePage() {
   const { id } = Route.useParams();
-  const fetchInvoice = useServerFn(getInvoice);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["invoice", id],
-    queryFn: () => fetchInvoice({ data: { id } }),
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_invoice_with_items", { _id: id });
+      if (error) throw new Error(error.message);
+      if (!data) throw new Error("Invoice tidak ditemukan");
+      const payload = data as { invoice: InvoiceRow; items: ItemRow[] };
+      return payload;
+    },
   });
-
 
   if (isLoading) return <div className="p-10 text-center text-muted-foreground">Memuat…</div>;
   if (error || !data) return <div className="p-10 text-center text-destructive">Invoice tidak ditemukan.</div>;
