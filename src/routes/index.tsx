@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { submitCheckout } from "@/lib/checkout.functions";
 import { useCart } from "@/lib/cart";
 import { formatIDR } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -315,53 +317,26 @@ function CheckoutDialog({
   const paid = Number(form.paid_amount) || (form.payment_method === "cash" ? 0 : total);
   const change = Math.max(0, paid - total);
 
+  const checkoutFn = useServerFn(submitCheckout);
   const submitMut = useMutation({
     mutationFn: async () => {
       if (!form.customer_name.trim()) throw new Error("Nama pelanggan wajib diisi");
       if (form.payment_method === "cash" && paid < total)
         throw new Error("Uang tunai kurang dari total");
 
-      const { data: invoice, error: invErr } = await supabase
-        .from("invoices")
-        .insert({
+      const result = await checkoutFn({
+        data: {
           customer_name: form.customer_name.trim(),
           customer_email: form.customer_email.trim() || null,
           customer_phone: form.customer_phone.trim() || null,
           customer_address: form.customer_address.trim() || null,
-          payment_method: form.payment_method,
-          subtotal,
-          tax,
-          total,
-          paid_amount: form.payment_method === "cash" ? paid : total,
-          change_amount: form.payment_method === "cash" ? change : 0,
-          status: "paid",
+          payment_method: form.payment_method as "cash" | "qris",
+          paid_amount: form.payment_method === "cash" ? paid : undefined,
           notes: form.notes.trim() || null,
-        })
-        .select()
-        .single();
-      if (invErr) throw invErr;
-
-      const items = cart.items.map((i) => ({
-        invoice_id: invoice.id,
-        book_id: i.id,
-        title: i.title,
-        author: i.author,
-        price: i.price,
-        quantity: i.quantity,
-        subtotal: i.price * i.quantity,
-      }));
-      const { error: itemsErr } = await supabase.from("invoice_items").insert(items);
-      if (itemsErr) throw itemsErr;
-
-      // Decrement stock
-      for (const i of cart.items) {
-        await supabase
-          .from("books")
-          .update({ stock: Math.max(0, i.stock - i.quantity) })
-          .eq("id", i.id);
-      }
-
-      return invoice.id as string;
+          items: cart.items.map((i) => ({ book_id: i.id, quantity: i.quantity })),
+        },
+      });
+      return result.id;
     },
     onSuccess: (id) => {
       cart.clear();
